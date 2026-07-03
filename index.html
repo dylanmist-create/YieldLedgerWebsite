@@ -36,7 +36,7 @@ body { font-family: var(--font-body); color: var(--ink); background: #0a0806;
 ══════════════════════════════════════════ */
 .page-slot {
   position: relative;
-  height: 200vh; /* 100vh visible + 100vh scroll travel */
+  height: 150vh; /* 100vh visible + 50vh scroll travel — faster page advance */
 }
 /* Last slot only needs 100vh — CTA stays */
 .page-slot:last-child { height: 100vh; }
@@ -247,7 +247,54 @@ h1.hero-title em { font-style: italic; color: var(--emerald); font-weight: 600; 
 
 /* Hero entrance */
 @keyframes riseIn { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-.hero-left > * { animation: riseIn 0.7s var(--ease-rise) both; }
+
+/* Scroll hint arrow */
+@keyframes bobDown {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(8px); }
+}
+.scroll-hint {
+  position: absolute;
+  bottom: 2rem; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.4rem;
+  animation: bobDown 2s ease-in-out infinite;
+  z-index: 10; pointer-events: none;
+}
+.scroll-hint-label {
+  font-size: 0.65rem; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: rgba(247,241,227,0.4);
+}
+.scroll-hint-arrow {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,248,235,0.08);
+  border: 1px solid rgba(255,248,235,0.15);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(247,241,227,0.5);
+}
+.scroll-hint-arrow svg { width: 16px; height: 16px; }
+
+/* Donate button */
+.donate-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px; border: 1px solid rgba(251,191,36,0.35);
+  background: rgba(251,191,36,0.08);
+  color: var(--amber);
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+.donate-btn:hover {
+  background: rgba(251,191,36,0.15);
+  border-color: rgba(251,191,36,0.55);
+  transform: translateY(-1px);
+}
+.donate-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.donate-wrap { display: flex; justify-content: center; margin-top: 0.5rem; }.hero-left > * { animation: riseIn 0.7s var(--ease-rise) both; }
 .hero-left > *:nth-child(1){animation-delay:0.02s} .hero-left > *:nth-child(2){animation-delay:0.08s}
 .hero-left > *:nth-child(3){animation-delay:0.14s} .hero-left > *:nth-child(4){animation-delay:0.2s}
 .hero-left > *:nth-child(5){animation-delay:0.26s}
@@ -306,9 +353,10 @@ h1.hero-title em { font-style: italic; color: var(--emerald); font-weight: 600; 
         <h1 class="hero-title">Bring in <em>your whole</em> harvest.</h1>
         <p class="hero-sub">One ledger for accounts, bills, budgets, investments, and credit — kept private on your own machine, never in someone else's cloud.</p>
         <div class="download-card">
-          <button class="dl-btn">
+          <button class="dl-btn" onclick="window.location='https://github.com/dylanmist-create/yieldledgerrelease/releases/download/Budgeting/TheYield_Setup.exe'">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
             Download for Windows
+            <span style="font-size:0.68rem;font-weight:700;background:rgba(6,21,16,0.35);border:1px solid rgba(6,21,16,0.25);border-radius:4px;padding:0.15rem 0.4rem;letter-spacing:0.04em;margin-left:0.2rem;">v1.0</span>
           </button>
           <div class="dl-meta"><span>Version <strong>1.0</strong></span><span><strong>64-bit</strong> · Windows 10/11</span></div>
           <div class="dl-divider"></div>
@@ -318,8 +366,21 @@ h1.hero-title em { font-style: italic; color: var(--emerald); font-weight: 600; 
             <div class="dl-spec-label">Data storage</div><div class="dl-spec-val">Local, encrypted</div>
             <div class="dl-spec-label">Cloud required</div><div class="dl-spec-val">No</div>
           </div>
+          <div class="dl-divider"></div>
+          <a href="https://ko-fi.com/theyieldledger" target="_blank" rel="noopener" class="donate-btn" style="width:100%;justify-content:center;">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg>
+            Support the author — Buy me a coffee
+          </a>
         </div>
         <p class="footer-note"><strong>Nothing leaves your computer.</strong> The Yield has no servers, no accounts, and no analytics — your ledger lives in one encrypted file, on one machine, under your name.</p>
+      </div>
+
+      <!-- Scroll hint arrow -->
+      <div class="scroll-hint">
+        <div class="scroll-hint-label">Scroll</div>
+        <div class="scroll-hint-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m7 15 5 5 5-5"/></svg>
+        </div>
       </div>
 
       <div class="hero-right">
@@ -446,10 +507,17 @@ h1.hero-title em { font-style: italic; color: var(--emerald); font-weight: 600; 
       <div class="section-eyebrow">Ready?</div>
       <h2 class="section-title">Take control of <em>your finances.</em></h2>
       <p class="section-sub" style="margin:0 auto 2.5rem">Download The Yield Ledger and start managing your money — your way. No accounts, no cloud, no nonsense.</p>
-      <button class="cta-btn">
+      <button class="cta-btn" onclick="window.location='https://github.com/dylanmist-create/yieldledgerrelease/releases/download/Budgeting/TheYield_Setup.exe'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
         Download for Windows
+        <span style="font-size:0.68rem;font-weight:700;background:rgba(6,21,16,0.35);border:1px solid rgba(6,21,16,0.25);border-radius:4px;padding:0.15rem 0.4rem;letter-spacing:0.04em;margin-left:0.2rem;">v1.0</span>
       </button>
+      <div class="donate-wrap">
+        <a href="https://ko-fi.com/theyieldledger" target="_blank" rel="noopener" class="donate-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg>
+          Support the author — Buy me a coffee
+        </a>
+      </div>
       <div class="cta-meta">
         <div class="cta-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Windows 10/11</div>
         <div class="cta-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>~90 MB</div>
