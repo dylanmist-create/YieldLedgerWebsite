@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Yield — A Ledger for Your Whole Harvest</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: auto; } /* no smooth — interferes with sticky */
+
+:root {
+  --glass: rgba(255,248,235,0.072); --glass-2: rgba(255,248,235,0.11);
+  --glass-border: rgba(255,238,210,0.13); --glass-border-2: rgba(255,238,210,0.21);
+  --shadow: 0 6px 20px rgba(20,14,5,0.45), 0 2px 6px rgba(20,14,5,0.3);
+  --shadow-lg: 0 14px 48px rgba(20,14,5,0.6), 0 4px 14px rgba(20,14,5,0.35);
+  --emerald: #10b981; --emerald-dk: #059669;
+  --emerald-lt: rgba(16,185,129,0.16); --emerald-mid: rgba(16,185,129,0.32);
+  --red: #f87171; --amber: #fbbf24; --blue: #60a5fa;
+  --ink: #f7f1e3; --ink-2: #d8cdb8; --ink-3: #9c9079; --ink-4: #7a6e5c;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ease-rise: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-settle: cubic-bezier(0.34, 1.2, 0.4, 1);
+}
+
+body { font-family: var(--font-body); color: var(--ink); background: #0a0806;
+  line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+/* ══════════════════════════════════════════
+   CARD STACK ENGINE
+   Each .page-card is sticky at top:0.
+   Its parent .page-slot is 200vh tall —
+   giving one full viewport of scroll before
+   the card lifts off and the next one shows.
+══════════════════════════════════════════ */
+.page-slot {
+  position: relative;
+  height: 200vh; /* 100vh visible + 100vh scroll travel */
+}
+/* Last slot only needs 100vh — CTA stays */
+.page-slot:last-child { height: 100vh; }
+
+.page-card {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  will-change: transform;
+}
+
+/* Earlier cards sit ON TOP — higher z-index means it's the current visible card.
+   As you scroll its slot, it lifts away revealing the card beneath it. */
+.page-slot:nth-child(1) .page-card { z-index: 60; }
+.page-slot:nth-child(2) .page-card { z-index: 50; }
+.page-slot:nth-child(3) .page-card { z-index: 40; }
+.page-slot:nth-child(4) .page-card { z-index: 30; }
+.page-slot:nth-child(5) .page-card { z-index: 20; }
+.page-slot:nth-child(6) .page-card { z-index: 10; }
+
+/* ══════════════════════════════════════════
+   BACKGROUND — fixed, shows through as cards lift
+══════════════════════════════════════════ */
+.page-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    radial-gradient(ellipse 1400px 900px at 30% 0%, rgba(12,10,7,0.2) 0%, rgba(10,8,6,0.6) 55%, rgba(8,7,5,0.88) 100%),
+    linear-gradient(115deg, rgba(8,7,5,0.78) 0%, rgba(8,7,5,0.42) 38%, rgba(8,7,5,0.7) 100%),
+    url('img/bg.jpg');
+  background-size: cover; background-position: center 38%;
+}
+
+/* ══════════════════════════════════════════
+   CARD THEMES
+══════════════════════════════════════════ */
+.card-hero    { background: transparent; z-index: 50; } /* hero is transparent — bg shows through */
+.card-summary { background: rgba(18,14,10,0.97); z-index: 40; border-radius: 20px 20px 0 0; box-shadow: 0 -20px 60px rgba(0,0,0,0.7); }
+.card-feat    { background: rgba(22,17,12,0.97); z-index: 30; border-radius: 20px 20px 0 0; box-shadow: 0 -20px 60px rgba(0,0,0,0.7); }
+.card-who     { background: rgba(16,13,9,0.98);  z-index: 20; border-radius: 20px 20px 0 0; box-shadow: 0 -20px 60px rgba(0,0,0,0.7); }
+.card-trust   { background: rgba(20,15,10,0.98); z-index: 15; border-radius: 20px 20px 0 0; box-shadow: 0 -20px 60px rgba(0,0,0,0.7); }
+.card-cta     { background: rgba(10,8,5,0.99);   z-index: 10; border-radius: 20px 20px 0 0; box-shadow: 0 -20px 60px rgba(0,0,0,0.8); }
+
+/* Top divider line on each content card */
+.card-summary::before, .card-feat::before, .card-who::before,
+.card-trust::before, .card-cta::before {
+  content: ''; position: absolute; top: 0; left: 8vw; right: 8vw; height: 1px;
+  background: linear-gradient(to right, transparent, var(--glass-border-2) 20%, var(--glass-border-2) 80%, transparent);
+}
+
+/* Inner scroll for cards whose content is taller than viewport */
+.card-inner {
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 5rem 8vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.card-inner::-webkit-scrollbar { display: none; }
+.card-cta .card-inner { align-items: center; text-align: center; }
+
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+.hero-inner {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+/* Slideshow */
+.slideshow-frame {
+  position: absolute;
+  top: 4.4rem; left: 11rem; right: -3.5rem;
+  aspect-ratio: 1858 / 1080;
+  border-radius: 20px; overflow: hidden;
+  border: 1px solid var(--glass-border); box-shadow: var(--shadow-lg);
+}
+.slideshow-frame img { position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0; transition: opacity 1.4s var(--ease-rise); }
+.slideshow-frame img.is-active { opacity: 1; }
+.slideshow-scrim { position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(8,7,5,0.45) 0%, rgba(8,7,5,0.62) 60%, rgba(8,7,5,0.82) 100%),
+    linear-gradient(115deg, rgba(8,7,5,0.55) 0%, rgba(8,7,5,0.18) 45%, rgba(8,7,5,0.5) 100%); }
+.slideshow-dots { position: absolute; bottom: 0.85rem; left: 50%;
+  transform: translateX(-50%); display: flex; gap: 0.4rem; z-index: 2; }
+.slideshow-dots span { width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(247,241,227,0.3); transition: background 0.3s, width 0.3s; }
+.slideshow-dots span.is-active { background: var(--emerald); width: 18px; border-radius: 3px; }
+
+.hero-left { display: flex; flex-direction: column; justify-content: center;
+  padding: 4rem 4.5rem; position: relative; z-index: 1; }
+.brand-row { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 3rem; }
+.brand-logo { width: 52px; height: 52px; object-fit: contain;
+  filter: drop-shadow(0 0 14px rgba(16,185,129,0.55)) drop-shadow(0 0 32px rgba(16,185,129,0.25)); }
+.brand-name { font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; }
+.brand-tag { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3); }
+.hero-eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--emerald); font-weight: 600; margin-bottom: 1rem; }
+h1.hero-title { font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(2.6rem, 4.2vw, 3.8rem); line-height: 1.04;
+  color: var(--ink); margin-bottom: 1.3rem; max-width: 11ch; }
+h1.hero-title em { font-style: italic; color: var(--emerald); font-weight: 600; }
+.hero-sub { font-size: 1.02rem; color: var(--ink-2); max-width: 38ch; margin-bottom: 2.6rem; line-height: 1.65; }
+
+.download-card { background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 16px; backdrop-filter: blur(20px); padding: 1.6rem 1.8rem;
+  box-shadow: var(--shadow-lg); max-width: 420px; }
+.dl-btn { display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  width: 100%; padding: 1rem 1.4rem; border-radius: 11px; border: none;
+  background: linear-gradient(135deg, var(--emerald), var(--emerald-dk)); color: #06150d;
+  font-family: var(--font-body); font-weight: 700; font-size: 1rem;
+  box-shadow: 0 8px 28px rgba(16,185,129,0.38); cursor: pointer; }
+.dl-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+.dl-meta { display: flex; justify-content: space-between; margin-top: 0.9rem;
+  font-size: 0.72rem; color: var(--ink-3); }
+.dl-meta span strong { color: var(--ink-2); }
+.dl-divider { height: 1px; background: var(--glass-border); margin: 1.15rem 0; }
+.dl-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; font-size: 0.78rem; }
+.dl-spec-label { color: var(--ink-4); } .dl-spec-val { color: var(--ink-2); font-weight: 500; }
+.footer-note { margin-top: 2.2rem; font-size: 0.74rem; color: var(--ink-4); max-width: 380px; line-height: 1.55; }
+.footer-note strong { color: var(--ink-3); }
+
+/* Right panel — static card list, no scroll hint */
+.hero-right { display: flex; flex-direction: column; justify-content: center;
+  padding: 4rem 4rem 4rem 2.5rem; position: relative; z-index: 1; }
+.stack-label { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-4); font-weight: 600; margin-bottom: 1.3rem; }
+.card-list { display: flex; flex-direction: column; gap: 0.85rem; }
+.feat-card { background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 14px; backdrop-filter: blur(16px); box-shadow: var(--shadow);
+  padding: 1.15rem 1.4rem; display: flex; align-items: flex-start; gap: 1rem; }
+.feat-card:hover { border-color: var(--glass-border-2); background: var(--glass-2); }
+.feat-icon-wrap { width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem; }
+.feat-icon-wrap svg { width: 19px; height: 19px; }
+.feat-icon-emerald { background: var(--emerald-lt); color: var(--emerald); }
+.feat-icon-amber { background: rgba(251,191,36,0.15); color: var(--amber); }
+.feat-icon-blue { background: rgba(96,165,250,0.15); color: var(--blue); }
+.feat-icon-red { background: rgba(248,113,113,0.15); color: var(--red); }
+.feat-body { flex: 1; min-width: 0; }
+.feat-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem;
+  color: var(--ink); margin-bottom: 0.2rem; }
+.feat-desc { font-size: 0.8rem; color: var(--ink-3); line-height: 1.5; }
+
+/* ══════════════════════════════════════════
+   CONTENT CARD STYLES
+══════════════════════════════════════════ */
+.section-eyebrow { font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--emerald); font-weight: 700; margin-bottom: 0.75rem; }
+.section-title { font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(2rem, 3vw, 2.8rem); line-height: 1.08; color: var(--ink); margin-bottom: 1rem; }
+.section-title em { font-style: italic; color: var(--emerald); }
+.section-sub { font-size: 1rem; color: var(--ink-2); max-width: 52ch; line-height: 1.7; }
+
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; margin-top: 2.5rem; }
+.summary-text p { font-size: 1rem; color: var(--ink-2); line-height: 1.75; margin-bottom: 1.2rem; }
+.summary-text p strong { color: var(--ink); }
+.summary-pills { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1.5rem; }
+.pill { display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.85rem;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 20px; font-size: 0.76rem; font-weight: 600; color: var(--ink-2); }
+.pill svg { width: 13px; height: 13px; color: var(--emerald); flex-shrink: 0; }
+.summary-screenshot img { width: 100%; border-radius: 16px; box-shadow: var(--shadow-lg); border: 1px solid var(--glass-border); }
+
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: 2.5rem; }
+.feature-tile { background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 16px; padding: 1.6rem 1.3rem; text-align: center;
+  transition: border-color 0.25s, background 0.25s, transform 0.3s var(--ease-settle); }
+.feature-tile:hover { border-color: var(--glass-border-2); background: var(--glass-2); transform: translateY(-4px); }
+.feature-tile-icon { width: 48px; height: 48px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 0.9rem; }
+.feature-tile-icon svg { width: 22px; height: 22px; }
+.feature-tile-name { font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: var(--ink); margin-bottom: 0.35rem; }
+.feature-tile-desc { font-size: 0.78rem; color: var(--ink-3); line-height: 1.5; }
+
+.who-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+.who-image img { width: 100%; display: block; border-radius: 20px; box-shadow: var(--shadow-lg); }
+.who-list { list-style: none; margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.65rem; }
+.who-list li { display: flex; align-items: flex-start; gap: 0.65rem; font-size: 0.95rem; color: var(--ink-2); }
+.who-list li svg { width: 16px; height: 16px; color: var(--emerald); flex-shrink: 0; margin-top: 0.2rem; }
+
+.trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-top: 2.5rem; }
+.trust-tile { background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 14px; padding: 1.5rem 1.1rem; text-align: center;
+  transition: border-color 0.25s, transform 0.3s var(--ease-settle); }
+.trust-tile:hover { border-color: var(--emerald-mid); transform: translateY(-3px); }
+.trust-tile svg { width: 26px; height: 26px; color: var(--emerald); margin-bottom: 0.75rem; }
+.trust-tile-name { font-weight: 700; font-size: 0.85rem; color: var(--ink); margin-bottom: 0.3rem; }
+.trust-tile-desc { font-size: 0.74rem; color: var(--ink-4); line-height: 1.5; }
+.trust-tagline { margin-top: 2.5rem; text-align: center; font-family: var(--font-display);
+  font-size: 1.2rem; font-weight: 700; color: var(--ink-2); font-style: italic; }
+
+.cta-btn { display: inline-flex; align-items: center; gap: 0.65rem;
+  padding: 1.1rem 2.4rem; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, var(--emerald), var(--emerald-dk));
+  color: #06150d; font-family: var(--font-body); font-weight: 700; font-size: 1.1rem;
+  box-shadow: 0 10px 36px rgba(16,185,129,0.42); cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s; }
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 44px rgba(16,185,129,0.52); }
+.cta-btn svg { width: 20px; height: 20px; }
+.cta-meta { display: flex; gap: 2rem; justify-content: center; margin-top: 1.4rem; flex-wrap: wrap; }
+.cta-meta-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--ink-4); }
+.cta-meta-item svg { width: 14px; height: 14px; color: var(--emerald); }
+
+/* Hero entrance */
+@keyframes riseIn { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+.hero-left > * { animation: riseIn 0.7s var(--ease-rise) both; }
+.hero-left > *:nth-child(1){animation-delay:0.02s} .hero-left > *:nth-child(2){animation-delay:0.08s}
+.hero-left > *:nth-child(3){animation-delay:0.14s} .hero-left > *:nth-child(4){animation-delay:0.2s}
+.hero-left > *:nth-child(5){animation-delay:0.26s}
+.feat-card:nth-child(1){animation:riseIn 0.6s var(--ease-rise) 0.1s both}
+.feat-card:nth-child(2){animation:riseIn 0.6s var(--ease-rise) 0.18s both}
+.feat-card:nth-child(3){animation:riseIn 0.6s var(--ease-rise) 0.26s both}
+.feat-card:nth-child(4){animation:riseIn 0.6s var(--ease-rise) 0.34s both}
+.feat-card:nth-child(5){animation:riseIn 0.6s var(--ease-rise) 0.42s both}
+.feat-card:nth-child(6){animation:riseIn 0.6s var(--ease-rise) 0.5s both}
+
+@media (max-width: 980px) {
+  .hero-inner { grid-template-columns: 1fr; }
+  .hero-left { padding: 3rem 2rem; }
+  .slideshow-frame { top: 1.2rem; left: 1.2rem; right: 1.2rem; }
+  .hero-right { padding: 2rem; }
+  .summary-grid, .who-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .features-grid { grid-template-columns: 1fr 1fr; }
+  .trust-grid { grid-template-columns: 1fr 1fr; }
+  .card-inner { padding: 4rem 5vw; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-left > *, .feat-card { animation: none; }
+  .slideshow-frame img { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-bg"></div>
+
+<!-- ══ SLOT 1: HERO ══ -->
+<div class="page-slot">
+  <div class="page-card card-hero">
+    <div class="hero-inner">
+
+      <div class="hero-left">
+        <div class="slideshow-frame" id="slideshowFrame">
+          <img src="img/screens/shot1.jpg" alt="" class="is-active" />
+          <img src="img/screens/shot2.jpg" alt="" />
+          <img src="img/screens/shot3.jpg" alt="" />
+          <img src="img/screens/shot4.jpg" alt="" />
+          <img src="img/screens/shot5.jpg" alt="" />
+          <img src="img/screens/shot6.jpg" alt="" />
+          <img src="img/screens/shot7.jpg" alt="" />
+          <div class="slideshow-scrim"></div>
+          <div class="slideshow-dots" id="slideshowDots">
+            <span class="is-active"></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+        <div class="brand-row">
+          <img src="img/logo.png" alt="The Yield" class="brand-logo" />
+          <div><div class="brand-name">THE YIELD</div><div class="brand-tag">Ledger</div></div>
+        </div>
+        <div class="hero-eyebrow">Desktop App · Windows</div>
+        <h1 class="hero-title">Bring in <em>your whole</em> harvest.</h1>
+        <p class="hero-sub">One ledger for accounts, bills, budgets, investments, and credit — kept private on your own machine, never in someone else's cloud.</p>
+        <div class="download-card">
+          <button class="dl-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            Download for Windows
+          </button>
+          <div class="dl-meta"><span>Version <strong>1.0</strong></span><span><strong>64-bit</strong> · Windows 10/11</span></div>
+          <div class="dl-divider"></div>
+          <div class="dl-specs">
+            <div class="dl-spec-label">Install size</div><div class="dl-spec-val">~90 MB</div>
+            <div class="dl-spec-label">License</div><div class="dl-spec-val">Personal use</div>
+            <div class="dl-spec-label">Data storage</div><div class="dl-spec-val">Local, encrypted</div>
+            <div class="dl-spec-label">Cloud required</div><div class="dl-spec-val">No</div>
+          </div>
+        </div>
+        <p class="footer-note"><strong>Nothing leaves your computer.</strong> The Yield has no servers, no accounts, and no analytics — your ledger lives in one encrypted file, on one machine, under your name.</p>
+      </div>
+
+      <div class="hero-right">
+        <div class="stack-label">What's inside</div>
+        <div class="card-list">
+          <div class="feat-card">
+            <div class="feat-icon-wrap feat-icon-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+            <div class="feat-body"><div class="feat-title">A dashboard that actually tells you something</div><div class="feat-desc">Net worth trend, true unallocated funds, top budget burners, and a financial health score — at a glance, every time you open it.</div></div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap feat-icon-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+            <div class="feat-body"><div class="feat-title">Bills, budgets, and recurring spend</div><div class="feat-desc">Recurring charges get detected automatically. Budgets track in real time with rollover and over-budget warnings before they sting.</div></div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap feat-icon-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M21 7h-6M21 7v6"/></svg></div>
+            <div class="feat-body"><div class="feat-title">Investments, tracked without the noise</div><div class="feat-desc">Portfolio value over time, cost basis, gain/loss by account — for every retirement, brokerage, and joint account you hold.</div></div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap feat-icon-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+            <div class="feat-body"><div class="feat-title">Credit score history, by person</div><div class="feat-desc">Track every household member's score over time, see what's driving it, and catch problems before they become expensive.</div></div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap feat-icon-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg></div>
+            <div class="feat-body"><div class="feat-title">The Silo — a private password vault</div><div class="feat-desc">Bank, brokerage, and bill logins stored behind their own encrypted layer, separate from the rest of your ledger.</div></div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap feat-icon-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+            <div class="feat-body"><div class="feat-title">Encrypted at rest, always</div><div class="feat-desc">Your ledger is encrypted on disk and only decrypted while the app is open — closed, it's unreadable without your login.</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLOT 2: APP SUMMARY ══ -->
+<div class="page-slot">
+  <div class="page-card card-summary">
+    <div class="card-inner">
+      <div class="section-eyebrow">What it is</div>
+      <h2 class="section-title">The private, <em>all-in-one</em> ledger.</h2>
+      <div class="summary-grid">
+        <div class="summary-text">
+          <p>The Yield Ledger is a <strong>private, offline-first finance app</strong> that helps you manage every part of your financial life — accounts, budgets, bills, investments, and credit — all in one secure desktop application.</p>
+          <p>It gives you a clear, real-time overview of your net worth, spending patterns, and financial health without relying on the cloud or sharing your data with anyone. Everything is encrypted, stored locally, and built to keep your money, your plan, and your privacy exactly where they belong: <strong>with you.</strong></p>
+          <div class="summary-pills">
+            <div class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>100% Private</div>
+            <div class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>Offline First</div>
+            <div class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Local &amp; Encrypted</div>
+            <div class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M9 9a3 3 0 0 0 5.12 2.12M10.73 5.08A10 10 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/></svg>No Sign-up</div>
+          </div>
+        </div>
+        <div class="summary-screenshot">
+          <img src="img/screens/shot1.jpg" alt="The Yield Dashboard" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLOT 3: FEATURES ══ -->
+<div class="page-slot">
+  <div class="page-card card-feat">
+    <div class="card-inner">
+      <div class="section-eyebrow">Everything included</div>
+      <h2 class="section-title">Six pages. <em>One complete picture.</em></h2>
+      <div class="features-grid">
+        <div class="feature-tile"><div class="feature-tile-icon feat-icon-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div class="feature-tile-name">Accounts</div><div class="feature-tile-desc">Track all your checking, savings, and loan balances in one place.</div></div>
+        <div class="feature-tile"><div class="feature-tile-icon feat-icon-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg></div><div class="feature-tile-name">Goals &amp; Budgets</div><div class="feature-tile-desc">Set spending limits and savings goals and watch them track in real time.</div></div>
+        <div class="feature-tile"><div class="feature-tile-icon feat-icon-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><div class="feature-tile-name">Bills &amp; Recurring</div><div class="feature-tile-desc">Never miss a payment. Recurring charges detected automatically.</div></div>
+        <div class="feature-tile"><div class="feature-tile-icon feat-icon-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M21 7h-6M21 7v6"/></svg></div><div class="feature-tile-name">Investments</div><div class="feature-tile-desc">Monitor portfolio performance, cost basis, and growth over time.</div></div>
+        <div class="feature-tile"><div class="feature-tile-icon feat-icon-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16h4M7 11h8M7 6h2"/></svg></div><div class="feature-tile-name">Credit Monitor</div><div class="feature-tile-desc">Track scores and spot issues early across every person in your household.</div></div>
+        <div class="feature-tile"><div class="feature-tile-icon feat-icon-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg></div><div class="feature-tile-name">The Silo</div><div class="feature-tile-desc">Your private vault for bank and brokerage logins. Peace of mind included.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLOT 4: WHO IT'S FOR ══ -->
+<div class="page-slot">
+  <div class="page-card card-who">
+    <div class="card-inner">
+      <div class="who-grid">
+        <div>
+          <div class="section-eyebrow">Who it's for</div>
+          <h2 class="section-title">Built for anyone who wants <em>clarity</em>, control, and complete privacy.</h2>
+          <p class="section-sub">You don't need to be wealthy or a spreadsheet wizard. You just need one place that shows you where your money actually is — without handing that information to a tech company.</p>
+          <ul class="who-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Households tracking shared finances</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Freelancers managing irregular income</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Anyone who doesn't trust their data to the cloud</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Families budgeting toward real goals</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Small business owners keeping personal and business money separate</li>
+          </ul>
+        </div>
+        <div class="who-image"><img src="img/screens/shot3.jpg" alt="The Yield in use" /></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLOT 5: TRUST ══ -->
+<div class="page-slot">
+  <div class="page-card card-trust">
+    <div class="card-inner">
+      <div class="section-eyebrow" style="text-align:center">Trust &amp; security</div>
+      <h2 class="section-title" style="text-align:center">Your financial life. <em>Your rules.</em> Your privacy.</h2>
+      <div class="trust-grid">
+        <div class="trust-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg><div class="trust-tile-name">100% Local</div><div class="trust-tile-desc">Your data never leaves your device. No sync. No cloud. No exceptions.</div></div>
+        <div class="trust-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><div class="trust-tile-name">Encrypted at Rest</div><div class="trust-tile-desc">Fernet AES-128 encryption keeps your ledger locked on disk when the app is closed.</div></div>
+        <div class="trust-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M9 9a3 3 0 0 0 5.12 2.12M10.73 5.08A10 10 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/></svg><div class="trust-tile-name">No Cloud. No Accounts.</div><div class="trust-tile-desc">No servers, no sign-ups, no tracking, no subscription. Download and own it.</div></div>
+        <div class="trust-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="trust-tile-name">Open &amp; Transparent</div><div class="trust-tile-desc">VirusTotal-verified clean. 62 of 64 engines report no threats. Zero network activity during scan.</div><div style="margin-top:0.75rem;display:flex;gap:0.7rem;justify-content:center;flex-wrap:wrap;"><a href="https://www.virustotal.com/gui/file/13930ce4853ca84f2664a244212a4e45d7578d78b4b9b299cb439ac009241c64" target="_blank" rel="noopener" style="font-size:0.7rem;font-weight:600;color:var(--emerald);text-decoration:underline;text-underline-offset:2px;">Installer scan →</a><a href="https://www.virustotal.com/gui/file/ee96182b93914af063138b9ca758eb53bfeffeae054e612ae9d2490ad63c6c4d" target="_blank" rel="noopener" style="font-size:0.7rem;font-weight:600;color:var(--emerald);text-decoration:underline;text-underline-offset:2px;">App scan →</a></div></div>
+      </div>
+      <div class="trust-tagline">"Your financial life. Your rules. Your privacy."</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLOT 6: CTA (last-child, height 100vh) ══ -->
+<div class="page-slot">
+  <div class="page-card card-cta">
+    <div class="card-inner">
+      <div class="section-eyebrow">Ready?</div>
+      <h2 class="section-title">Take control of <em>your finances.</em></h2>
+      <p class="section-sub" style="margin:0 auto 2.5rem">Download The Yield Ledger and start managing your money — your way. No accounts, no cloud, no nonsense.</p>
+      <button class="cta-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Download for Windows
+      </button>
+      <div class="cta-meta">
+        <div class="cta-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Windows 10/11</div>
+        <div class="cta-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>~90 MB</div>
+        <div class="cta-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>No installation required</div>
+        <div class="cta-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>100% Private</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Slideshow
+(function() {
+  var imgs = document.querySelectorAll('#slideshowFrame img');
+  var dots = document.querySelectorAll('#slideshowDots span');
+  var i = 0;
+  if (!imgs.length) return;
+  setInterval(function() {
+    imgs[i].classList.remove('is-active'); dots[i].classList.remove('is-active');
+    i = (i + 1) % imgs.length;
+    imgs[i].classList.add('is-active'); dots[i].classList.add('is-active');
+  }, 4200);
+})();
+</script>
+</body>
+</html>
