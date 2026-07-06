@@ -159,6 +159,9 @@ h1.hero-title em { font-style: italic; color: var(--emerald); font-weight: 600; 
 .dl-meta { display: flex; justify-content: space-between; margin-top: 0.9rem;
   font-size: 0.72rem; color: var(--ink-3); }
 .dl-meta span strong { color: var(--ink-2); }
+.dl-changelog-link { font-size: 0.72rem; margin-top: 0.5rem; }
+.dl-changelog-link a { color: var(--emerald); text-decoration: none; font-weight: 600; }
+.dl-changelog-link a:hover { text-decoration: underline; }
 .dl-divider { height: 1px; background: var(--glass-border); margin: 1.15rem 0; }
 .dl-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; font-size: 0.78rem; }
 .dl-spec-label { color: var(--ink-4); } .dl-spec-val { color: var(--ink-2); font-weight: 500; }
@@ -415,12 +418,13 @@ h1.hero-title em { font-style: italic; color: var(--emerald); font-weight: 600; 
         <h1 class="hero-title">Bring in <em>your whole</em> harvest.</h1>
         <p class="hero-sub">One ledger for accounts, bills, budgets, investments, and credit — kept private on your own machine, never in someone else's cloud.</p>
         <div class="download-card">
-          <button class="dl-btn" onclick="window.location='https://github.com/dylanmist-create/yieldledgerrelease/releases/download/V1/TheYield_SetupV1.0.exe'">
+          <button class="dl-btn" id="dlBtnTop">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
             Download for Windows
-            <span style="font-size:0.68rem;font-weight:700;background:rgba(6,21,16,0.35);border:1px solid rgba(6,21,16,0.25);border-radius:4px;padding:0.15rem 0.4rem;letter-spacing:0.04em;margin-left:0.2rem;">v1.0</span>
+            <span id="dlBadgeTop" style="font-size:0.68rem;font-weight:700;background:rgba(6,21,16,0.35);border:1px solid rgba(6,21,16,0.25);border-radius:4px;padding:0.15rem 0.4rem;letter-spacing:0.04em;margin-left:0.2rem;">v1.1</span>
           </button>
-          <div class="dl-meta"><span>Version <strong>1.0</strong></span><span><strong>64-bit</strong> · Windows 10/11</span></div>
+          <div class="dl-meta"><span>Version <strong id="dlVersionTop">1.1</strong></span><span><strong>64-bit</strong> · Windows 10/11</span></div>
+          <div class="dl-changelog-link"><a href="changelog.html">View changelog →</a></div>
           <div class="dl-divider"></div>
           <div class="dl-specs">
             <div class="dl-spec-label">Install size</div><div class="dl-spec-val">~90 MB</div>
@@ -605,11 +609,12 @@ h1.hero-title em { font-style: italic; color: var(--emerald); font-weight: 600; 
       <div class="section-eyebrow">Ready?</div>
       <h2 class="section-title">Take control of <em>your finances.</em></h2>
       <p class="section-sub" style="margin:0 auto 2.5rem">Download The Yield Ledger and start managing your money — your way. No accounts, no cloud, no nonsense.</p>
-      <button class="cta-btn" onclick="window.location='https://github.com/dylanmist-create/yieldledgerrelease/releases/download/V1/TheYield_SetupV1.0.exe'">
+      <button class="cta-btn" id="dlBtnBottom">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
         Download for Windows
-        <span style="font-size:0.68rem;font-weight:700;background:rgba(6,21,16,0.35);border:1px solid rgba(6,21,16,0.25);border-radius:4px;padding:0.15rem 0.4rem;letter-spacing:0.04em;margin-left:0.2rem;">v1.0</span>
+        <span id="dlBadgeBottom" style="font-size:0.68rem;font-weight:700;background:rgba(6,21,16,0.35);border:1px solid rgba(6,21,16,0.25);border-radius:4px;padding:0.15rem 0.4rem;letter-spacing:0.04em;margin-left:0.2rem;">v1.1</span>
       </button>
+      <div class="dl-changelog-link" style="margin-top:0.6rem"><a href="changelog.html">View changelog →</a></div>
       <div class="donate-wrap">
         <a href="https://ko-fi.com/theyieldledger" target="_blank" rel="noopener" class="donate-btn">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg>
@@ -636,6 +641,34 @@ h1.hero-title em { font-style: italic; color: var(--emerald); font-weight: 600; 
 </a>
 
 <script>
+// ══════════════════════════════════════════════════════════════════
+// RELEASE INFO — the only two lines you need to touch for a new version.
+// Both download buttons + both "vX.X" badges + the version number in the
+// download card are all driven from these two constants — nothing else
+// in this file should ever need editing when a new build goes out.
+//
+// Note: past release tags haven't been 100% consistent (v1.0 used tag
+// "V1", v1.1 uses tag "V1.1") — so this is a plain URL string, not a
+// formula built from the version number. Paste the exact new release
+// URL here each time.
+// ══════════════════════════════════════════════════════════════════
+const YIELD_VERSION = "1.1";
+const YIELD_DOWNLOAD_URL = "https://github.com/dylanmist-create/yieldledgerrelease/releases/download/V1.1/TheYield_SetupV1.1.exe";
+
+(function() {
+  var badgeText = "v" + YIELD_VERSION;
+  var btnTop = document.getElementById('dlBtnTop');
+  var btnBottom = document.getElementById('dlBtnBottom');
+  if (btnTop) btnTop.addEventListener('click', function() { window.location = YIELD_DOWNLOAD_URL; });
+  if (btnBottom) btnBottom.addEventListener('click', function() { window.location = YIELD_DOWNLOAD_URL; });
+  var badgeTop = document.getElementById('dlBadgeTop');
+  var badgeBottom = document.getElementById('dlBadgeBottom');
+  var versionTop = document.getElementById('dlVersionTop');
+  if (badgeTop) badgeTop.textContent = badgeText;
+  if (badgeBottom) badgeBottom.textContent = badgeText;
+  if (versionTop) versionTop.textContent = YIELD_VERSION;
+})();
+
 // Slideshow
 (function() {
   var imgs = document.querySelectorAll('#slideshowFrame img');
