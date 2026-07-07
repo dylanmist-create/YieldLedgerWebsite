@@ -110,11 +110,23 @@ h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(2rem, 
   <h1>Changelog</h1>
   <p class="page-sub">Every release of The Yield Ledger, most recent first.</p>
 
+  <!-- ══ v1.2 ══ -->
+  <div class="release">
+    <div class="release-head">
+      <span class="release-version">v1.2</span>
+      <span class="release-badge">Latest</span>
+    </div>
+    <ul class="release-list">
+      <li><strong>Set up a new login (or restore a backup) right after resetting.</strong> Resetting all data now takes you to a dedicated setup screen instead of the plain sign-in page — choose a new username and password on the spot, or restore an existing backup instead of starting over.</li>
+      <li><strong>Review duplicate transactions.</strong> The duplicate-transaction warning now links to a full review page — see every flagged group side by side, mark ones that aren't actually duplicates so they stop getting flagged, or delete the real duplicates directly.</li>
+      <li><strong>Fixed a bug with duplicate account titles</strong> — two accounts sharing the same name (e.g. two people both importing "Chase Checking") could get merged together; accounts are now kept separate correctly.</li>
+    </ul>
+  </div>
+
   <!-- ══ v1.1 ══ -->
   <div class="release">
     <div class="release-head">
       <span class="release-version">v1.1</span>
-      <span class="release-badge">Latest</span>
     </div>
     <ul class="release-list">
       <li><strong>Multi-file statement import.</strong> Select several PDF statements at once — they're queued and reviewed one at a time, automatically sorted by date first so nothing gets imported out of order.</li>
