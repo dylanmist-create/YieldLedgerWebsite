@@ -110,11 +110,33 @@ h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(2rem, 
   <h1>Changelog</h1>
   <p class="page-sub">Every release of The Yield Ledger, most recent first.</p>
 
+  <!-- ══ v1.3 ══ -->
+  <div class="release">
+    <div class="release-head">
+      <span class="release-version">v1.3</span>
+      <span class="release-badge">Latest</span>
+    </div>
+    <ul class="release-list">
+      <li><strong>Locking the app now actually encrypts your data.</strong> Locking or minimizing (with "Lock on minimize" enabled) genuinely encrypts the database at rest, the same as fully quitting — previously it only hid the app behind the login screen while the file underneath stayed readable. The encryption key itself is now protected using Windows' own account-level security instead of sitting as a plain, readable file next to your data.</li>
+      <li><strong>Multi-person account support.</strong> Accounts are now matched by name <em>and</em> owner, so two people sharing one install (partners, roommates, etc.) no longer risk having identically-named bank accounts — like "Chase Checking" — silently merged into one.</li>
+      <li><strong>Review Duplicate Transactions.</strong> A full page to see every flagged duplicate group at once, permanently dismiss ones that aren't actually duplicates, or delete the real ones directly.</li>
+      <li><strong>Multi-file statement import.</strong> Select several PDF statements at once — they're automatically sorted by date and reviewed one at a time, so nothing imports out of order.</li>
+      <li><strong>Wells Fargo</strong> added to the supported banks on the import page (parser support already existed under the hood, it just wasn't visible there).</li>
+      <li><strong>Budgets auto-populate</strong> from your spending history each month — no more manually accepting suggestions.</li>
+      <li>Fixed a Chase parser bug that could split one real account into duplicate "phantom" accounts, and a separate bug that mis-dated December transactions on statements spanning into a new year.</li>
+      <li>Backups, reports, statements, and CSV exports weren't reliably landing where expected — they now save directly to your real Downloads folder every time.</li>
+      <li>The accounts page could take a long time to load with a lot of history — now defaults to the last 90 days, with an adjustable date range.</li>
+      <li>Startup now shows an instant splash screen instead of a blank, unresponsive window while the app loads.</li>
+      <li>Added visual feedback throughout the app — a loading indicator for anything that takes a moment, and buttons that can no longer be double-clicked into duplicate submissions.</li>
+      <li>Several dashboard figures were confusing or inconsistent — clearer "Amount After Bills" and "Amount Saved from Last Month" figures, and bills already paid (per your transaction history) are no longer shown as overdue.</li>
+      <li>The Silo now shows real provider logos instead of generic letter icons for 250+ common sites.</li>
+    </ul>
+  </div>
+
   <!-- ══ v1.2 ══ -->
   <div class="release">
     <div class="release-head">
       <span class="release-version">v1.2</span>
-      <span class="release-badge">Latest</span>
     </div>
     <ul class="release-list">
       <li><strong>Set up a new login (or restore a backup) right after resetting.</strong> Resetting all data now takes you to a dedicated setup screen instead of the plain sign-in page — choose a new username and password on the spot, or restore an existing backup instead of starting over.</li>
